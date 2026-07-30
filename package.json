@@ -1,0 +1,155 @@
+{
+  "name": "convo-think-exporter",
+  "displayName": "Convo Think Exporter",
+  "description": "Export AI agent conversation history (Claude Code, Cursor, Copilot Chat) with thinking and file access to a canonical JSON / Markdown format.",
+  "version": "0.0.1",
+  "publisher": "convo-think-exporter",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jromano/convo-think-exporter"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Machine Learning",
+    "Chat"
+  ],
+  "keywords": [
+    "ai",
+    "claude",
+    "cursor",
+    "copilot",
+    "export",
+    "thinking",
+    "conversation"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "convoThinkExport.exportContext",
+        "title": "Export Agent Context...",
+        "category": "Convo Think Export"
+      },
+      {
+        "command": "convoThinkExport.exportContextSummary",
+        "title": "Export Agent Context (summary only)",
+        "category": "Convo Think Export"
+      },
+      {
+        "command": "convoThinkExport.openSession",
+        "title": "Open Session",
+        "category": "Convo Think Export",
+        "enablement": "false"
+      },
+      {
+        "command": "convoThinkExport.refreshSessions",
+        "title": "Refresh Sessions",
+        "category": "Convo Think Export",
+        "icon": "$(refresh)"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "convoThinkExport.sessionsView",
+          "name": "Agent Sessions",
+          "icon": "$(comment-discussion)"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "convoThinkExport.activitybar",
+          "title": "Convo Think Export",
+          "icon": "$(export)"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "convoThinkExport.refreshSessions",
+          "when": "view == convoThinkExport.sessionsView",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "convoThinkExport.openSession",
+          "when": "view == convoThinkExport.sessionsView && viewItem == session",
+          "group": "inline"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Convo Think Export",
+      "properties": {
+        "convoThinkExport.outputFormat": {
+          "type": "string",
+          "enum": [
+            "json",
+            "markdown",
+            "both"
+          ],
+          "default": "both",
+          "description": "Output format for the exported conversation context."
+        },
+        "convoThinkExport.includeThinking": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include the thinking/reasoning blocks in the export."
+        },
+        "convoThinkExport.claudeProjectsPath": {
+          "type": "string",
+          "default": "",
+          "description": "Override the path to Claude Code projects directory. Defaults to ~/.claude/projects."
+        },
+        "convoThinkExport.cursorDatabasePath": {
+          "type": "string",
+          "default": "",
+          "description": "Override the path to Cursor state.vscdb. Defaults to the workspace storage database."
+        },
+        "convoThinkExport.outputDirectory": {
+          "type": "string",
+          "default": "",
+          "description": "Directory where exported files are saved. Defaults to the workspace root."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "npm run check-types && npm run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p ./tsconfig.json --outDir out",
+    "watch-tests": "tsc -p ./tsconfig.json --watch --outDir out",
+    "pretest": "npm run compile-tests",
+    "test": "vscode-test",
+    "lint": "eslint src --ext ts",
+    "check-types": "tsc --noEmit -p ./",
+    "smoke-test": "npm run compile && node out/smokeTest.js"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/vsce": "^3.0.0",
+    "esbuild": "^0.25.0",
+    "eslint": "^9.0.0",
+    "typescript": "^5.5.0",
+    "typescript-eslint": "^8.65.0"
+  },
+  "dependencies": {
+    "zod": "^3.23.0"
+  }
+}

@@ -1,0 +1,101 @@
+0 verbose cli /opt/homebrew/Cellar/node@24/24.16.0/bin/node /opt/homebrew/bin/npm
+1 info using npm@11.15.0
+2 info using node@v24.16.0
+3 silly config load:file:/opt/homebrew/lib/node_modules/npm/npmrc
+4 silly config load:file:/Users/jromano/Documents/3-Repositorios/convo-think-exporter/.npmrc
+5 silly config load:file:/Users/jromano/.npmrc
+6 silly config load:file:/opt/homebrew/etc/npmrc
+7 verbose title npm install typescript-eslint @eslint/js
+8 verbose argv "install" "--save-dev" "typescript-eslint" "@eslint/js" "--cache" ".npm-cache"
+9 verbose logfile logs-max:10 dir:/Users/jromano/Documents/3-Repositorios/convo-think-exporter/.npm-cache/_logs/2026-07-30T11_30_59_927Z-
+10 verbose logfile /Users/jromano/Documents/3-Repositorios/convo-think-exporter/.npm-cache/_logs/2026-07-30T11_30_59_927Z-debug-0.log
+11 silly logfile done cleaning log files
+12 silly packumentCache heap:4496293888 maxSize:1124073472 maxEntrySize:562036736
+13 silly idealTree buildDeps
+14 silly fetch manifest typescript-eslint@*
+15 silly packumentCache full:https://registry.npmjs.org/typescript-eslint cache-miss
+16 http cache https://registry.npmjs.org/typescript-eslint 40ms (cache hit)
+17 silly packumentCache full:https://registry.npmjs.org/typescript-eslint set size:4399973 disposed:false
+18 silly fetch manifest eslint@^9.0.0
+19 silly packumentCache full:https://registry.npmjs.org/eslint cache-miss
+20 http cache https://registry.npmjs.org/eslint 5ms (cache hit)
+21 silly packumentCache full:https://registry.npmjs.org/eslint set size:2040662 disposed:false
+22 silly fetch manifest jiti@*
+23 silly packumentCache full:https://registry.npmjs.org/jiti cache-miss
+24 http cache https://registry.npmjs.org/jiti 3ms (cache hit)
+25 silly packumentCache full:https://registry.npmjs.org/jiti set size:387989 disposed:false
+26 silly fetch manifest typescript@^5.5.0
+27 silly packumentCache full:https://registry.npmjs.org/typescript cache-miss
+28 http cache https://registry.npmjs.org/typescript 18ms (cache hit)
+29 silly packumentCache full:https://registry.npmjs.org/typescript set size:15493019 disposed:false
+30 silly fetch manifest @eslint/js@*
+31 silly packumentCache full:https://registry.npmjs.org/@eslint%2fjs cache-miss
+32 http cache https://registry.npmjs.org/@eslint%2fjs 3ms (cache hit)
+33 silly packumentCache full:https://registry.npmjs.org/@eslint%2fjs set size:141633 disposed:false
+34 silly fetch manifest eslint@^10.0.0
+35 silly packumentCache full:https://registry.npmjs.org/eslint cache-miss
+36 http cache https://registry.npmjs.org/eslint 2ms (cache hit)
+37 silly packumentCache full:https://registry.npmjs.org/eslint set size:2040662 disposed:false
+38 silly placeDep ROOT @eslint/js@10.0.1 REPLACE for: convo-think-exporter@0.0.1 want: *
+39 silly placeDep ROOT typescript-eslint@8.65.0 OK for: convo-think-exporter@0.0.1 want: *
+40 verbose stack Error: could not resolve
+40 verbose stack     at PlaceDep.failPeerConflict (/opt/homebrew/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/place-dep.js:503:25)
+40 verbose stack     at new PlaceDep (/opt/homebrew/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/place-dep.js:157:21)
+40 verbose stack     at #buildDepStep (/opt/homebrew/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/build-ideal-tree.js:995:18)
+40 verbose stack     at async Arborist.buildIdealTree (/opt/homebrew/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/build-ideal-tree.js:178:7)
+40 verbose stack     at async Promise.all (index 1)
+40 verbose stack     at async Arborist.reify (/opt/homebrew/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:112:5)
+40 verbose stack     at async Install.exec (/opt/homebrew/lib/node_modules/npm/lib/commands/install.js:149:5)
+40 verbose stack     at async Npm.exec (/opt/homebrew/lib/node_modules/npm/lib/npm.js:193:9)
+40 verbose stack     at async module.exports (/opt/homebrew/lib/node_modules/npm/lib/cli/entry.js:67:5)
+41 error code ERESOLVE
+42 error ERESOLVE could not resolve
+43 error
+44 error While resolving: @eslint/js@10.0.1
+44 error Found: eslint@9.39.5
+44 error node_modules/eslint
+44 error   peer eslint@"^6.0.0 || ^7.0.0 || >=8.0.0" from @eslint-community/eslint-utils@4.10.1
+44 error   node_modules/@eslint-community/eslint-utils
+44 error     @eslint-community/eslint-utils@"^4.9.1" from @typescript-eslint/utils@8.65.0
+44 error     node_modules/@typescript-eslint/utils
+44 error       @typescript-eslint/utils@"8.65.0" from @typescript-eslint/eslint-plugin@8.65.0
+44 error       node_modules/@typescript-eslint/eslint-plugin
+44 error         dev @typescript-eslint/eslint-plugin@"^8.0.0" from the root project
+44 error         1 more (typescript-eslint)
+44 error       2 more (@typescript-eslint/type-utils, typescript-eslint)
+44 error     @eslint-community/eslint-utils@"^4.8.0" from eslint@9.39.5
+44 error   peer eslint@"^8.57.0 || ^9.0.0 || ^10.0.0" from @typescript-eslint/eslint-plugin@8.65.0
+44 error   node_modules/@typescript-eslint/eslint-plugin
+44 error     dev @typescript-eslint/eslint-plugin@"^8.0.0" from the root project
+44 error     @typescript-eslint/eslint-plugin@"8.65.0" from typescript-eslint@8.65.0
+44 error     node_modules/typescript-eslint
+44 error       dev typescript-eslint@"*" from the root project
+44 error   5 more (@typescript-eslint/parser, ...)
+44 error
+44 error Could not resolve dependency:
+44 error peerOptional eslint@"^10.0.0" from @eslint/js@10.0.1
+44 error node_modules/@eslint/js
+44 error   dev @eslint/js@"*" from the root project
+44 error
+44 error Conflicting peer dependency: eslint@10.8.0
+44 error node_modules/eslint
+44 error   peerOptional eslint@"^10.0.0" from @eslint/js@10.0.1
+44 error   node_modules/@eslint/js
+44 error     dev @eslint/js@"*" from the root project
+44 error
+44 error Fix the upstream dependency conflict, or retry this command with --force or --legacy-peer-deps to accept an incorrect (and potentially broken) dependency resolution.
+45 error
+45 error
+45 error For a full report see:
+45 error /Users/jromano/Documents/3-Repositorios/convo-think-exporter/.npm-cache/_logs/2026-07-30T11_30_59_927Z-eresolve-report.txt
+46 silly unfinished npm timer reify 1785411060204
+47 silly unfinished npm timer reify:loadTrees 1785411060204
+48 silly unfinished npm timer idealTree:buildDeps 1785411060269
+49 silly unfinished npm timer idealTree:node_modules/@eslint/js 1785411060429
+50 verbose cwd /Users/jromano/Documents/3-Repositorios/convo-think-exporter
+51 verbose os Darwin 25.5.0
+52 verbose node v24.16.0
+53 verbose npm  v11.15.0
+54 verbose exit 1
+55 verbose code 1
+56 error A complete log of this run can be found in: /Users/jromano/Documents/3-Repositorios/convo-think-exporter/.npm-cache/_logs/2026-07-30T11_30_59_927Z-debug-0.log
