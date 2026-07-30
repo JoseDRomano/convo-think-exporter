@@ -20,54 +20,75 @@ async function main(): Promise<void> {
 
   fs.mkdirSync(path.join(projectsDir, projectPath), { recursive: true });
 
+  // Mirrors the real on-disk wire format: top-level `type`, with the
+  // actual payload nested under `message.content` as a block array.
   const jsonl = [
     JSON.stringify({
       type: "user",
       uuid: "u1",
       timestamp: "2025-01-15T10:00:00Z",
-      message: "Please read package.json and edit src/foo.ts",
-    }),
-    JSON.stringify({
-      type: "thinking",
-      thinking: "I need to read package.json first, then edit foo.ts to add the new function.",
+      cwd: "/home/user/test-project",
+      message: {
+        role: "user",
+        content: [{ type: "text", text: "Please read package.json and edit src/foo.ts" }],
+      },
     }),
     JSON.stringify({
       type: "assistant",
       uuid: "a1",
       timestamp: "2025-01-15T10:00:05Z",
-      content: [
-        { type: "text", text: "I'll read package.json and edit src/foo.ts." },
-        { type: "tool_use", name: "Read", input: { file_path: "/home/user/test-project/package.json" } },
-      ],
+      cwd: "/home/user/test-project",
+      message: {
+        role: "assistant",
+        content: [
+          {
+            type: "thinking",
+            thinking: "I need to read package.json first, then edit foo.ts to add the new function.",
+          },
+          { type: "text", text: "I'll read package.json and edit src/foo.ts." },
+          { type: "tool_use", name: "Read", input: { file_path: "/home/user/test-project/package.json" } },
+        ],
+      },
     }),
     JSON.stringify({
       type: "assistant",
       uuid: "a2",
       timestamp: "2025-01-15T10:00:10Z",
-      content: [
-        {
-          type: "tool_use",
-          name: "Edit",
-          input: { file_path: "/home/user/test-project/src/foo.ts", diff: "+12 -3 lines of diff" },
-        },
-      ],
-    }),
-    JSON.stringify({
-      type: "thinking",
-      thinking: "",
-      signature: "some-signature",
+      cwd: "/home/user/test-project",
+      message: {
+        role: "assistant",
+        content: [
+          {
+            type: "tool_use",
+            name: "Edit",
+            input: { file_path: "/home/user/test-project/src/foo.ts", diff: "+12 -3 lines of diff" },
+          },
+        ],
+      },
     }),
     JSON.stringify({
       type: "assistant",
       uuid: "a3",
       timestamp: "2025-01-15T10:00:15Z",
-      content: [{ type: "text", text: "Done editing foo.ts." }],
+      cwd: "/home/user/test-project",
+      message: {
+        role: "assistant",
+        // Empty thinking with signature (known bug)
+        content: [
+          { type: "thinking", thinking: "", signature: "some-signature" },
+          { type: "text", text: "Done editing foo.ts." },
+        ],
+      },
     }),
     JSON.stringify({
       type: "user",
       uuid: "u2",
       timestamp: "2025-01-15T10:00:20Z",
-      message: "Thanks!",
+      cwd: "/home/user/test-project",
+      message: {
+        role: "user",
+        content: [{ type: "text", text: "Thanks!" }],
+      },
     }),
   ].join("\n");
 

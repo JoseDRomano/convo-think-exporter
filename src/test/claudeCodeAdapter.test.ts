@@ -27,9 +27,8 @@ suite("ClaudeCodeAdapter", () => {
   });
 
   test("discoverSessions finds the sample session", async () => {
-    // We can't easily override the config in a unit test, so we test
-    // loadSession directly with a known path.
     const adapter = new ClaudeCodeAdapter();
+    adapter.setProjectsDir(projectsDir);
     const session = await adapter.loadSession(sessionId, projectPath);
 
     assert.strictEqual(session.session.source, "claude-code");
@@ -39,6 +38,7 @@ suite("ClaudeCodeAdapter", () => {
 
   test("loadSession produces the correct number of turns", async () => {
     const adapter = new ClaudeCodeAdapter();
+    adapter.setProjectsDir(projectsDir);
     const session = await adapter.loadSession(sessionId, projectPath);
 
     // 2 user turns + 3 assistant turns = 5
@@ -47,6 +47,7 @@ suite("ClaudeCodeAdapter", () => {
 
   test("user turns have not_supported thinking", async () => {
     const adapter = new ClaudeCodeAdapter();
+    adapter.setProjectsDir(projectsDir);
     const session = await adapter.loadSession(sessionId, projectPath);
 
     const userTurns = session.turns.filter((t) => t.role === "user");
@@ -59,6 +60,7 @@ suite("ClaudeCodeAdapter", () => {
 
   test("first assistant turn has present thinking", async () => {
     const adapter = new ClaudeCodeAdapter();
+    adapter.setProjectsDir(projectsDir);
     const session = await adapter.loadSession(sessionId, projectPath);
 
     const assistantTurns = session.turns.filter((t) => t.role === "assistant");
@@ -68,6 +70,7 @@ suite("ClaudeCodeAdapter", () => {
 
   test("empty thinking with signature is marked as empty (known bug)", async () => {
     const adapter = new ClaudeCodeAdapter();
+    adapter.setProjectsDir(projectsDir);
     const session = await adapter.loadSession(sessionId, projectPath);
 
     const assistantTurns = session.turns.filter((t) => t.role === "assistant");
@@ -79,6 +82,7 @@ suite("ClaudeCodeAdapter", () => {
 
   test("file_access is captured from tool_use blocks", async () => {
     const adapter = new ClaudeCodeAdapter();
+    adapter.setProjectsDir(projectsDir);
     const session = await adapter.loadSession(sessionId, projectPath);
 
     const assistantTurns = session.turns.filter((t) => t.role === "assistant");

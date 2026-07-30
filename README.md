@@ -96,6 +96,7 @@ Thinking is wrapped in `<details>` so it stays collapsed for humans but is fully
 | `convoThinkExport.includeThinking` | `true` | Include thinking/reasoning blocks in the export. |
 | `convoThinkExport.claudeProjectsPath` | `""` | Override the Claude Code projects directory (defaults to `~/.claude/projects`). |
 | `convoThinkExport.cursorDatabasePath` | `""` | Override the Cursor `state.vscdb` path. |
+| `convoThinkExport.copilotChatStoragePath` | `""` | Override the VS Code User directory for Copilot Chat sessions (defaults to the platform-specific dir, e.g. `~/Library/Application Support/Code/User`). |
 | `convoThinkExport.outputDirectory` | `""` | Directory for exported files (defaults to workspace root). |
 
 ## Architecture
@@ -138,7 +139,7 @@ Each adapter only knows how to convert one source format into the intermediate m
 1. **MVP — Claude Code only**: JSON schema + Markdown renderer + manual export command. ✅
 2. **Canonicalization + tests**: regression fixtures, schema validation (Zod), explicit `empty`/`redacted` handling. ✅
 3. **Cursor**: SQLite adapter (stub present).
-4. **Copilot Chat**: adapter over native export (stub present).
+4. **Copilot Chat**: adapter reading JSONL mutation logs from VS Code storage (including external/BYOK model conversations). ✅
 5. **UI/UX**: tree view, picker, settings, LLM summary command. ✅
 6. **(Optional) Reimport mode**: inject exported Markdown/JSON as the first message of a new conversation.
 

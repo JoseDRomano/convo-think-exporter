@@ -3,20 +3,26 @@
  *
  * Reads `~/.claude/projects/<project>/<session>.jsonl` files.
  *
- * Each line is a JSON object with a `type` field:
- *  - "user"        → user turn
- *  - "assistant"   → assistant turn (may contain thinking + tool_use)
- *  - "thinking"    → thinking block (sometimes empty with a `signature`)
- *  - "tool_use"     → tool invocation (Read, Edit, Write, Bash, ...)
- *  - "tool_result"  → result of a tool invocation
+ * Each line is a JSON object with a top-level `type` field. The two that
+ * carry turns are "user" and "assistant"; the actual message payload lives
+ * nested under `message.content`, which is either a plain string or an
+ * array of content blocks:
+ *  - "text"             → visible reply / user text
+ *  - "thinking"         → extended-thinking block (sometimes empty even
+ *                          though a `signature` is present — known bug,
+ *                          we mark `status: "empty"` in that case)
+ *  - "redacted_thinking" → thinking redacted by the API
+ *  - "tool_use"          → tool invocation (Read, Edit, Write, Bash, ...)
+ *  - "tool_result"       → result of a tool invocation (appears inside a
+ *                          later "user" line; carries no turn content)
  *
- * Known bug: in some versions the thinking block comes empty even though
- * a `signature` is present — we mark `status: "empty"` in that case.
+ * Everything else at the top level ("queue-operation", "attachment",
+ * "file-history-snapshot", "ai-title", ...) is session/UI bookkeeping and
+ * does not produce a turn.
  */
 
 import * as fs from "fs";
 import * as path from "path";
-import * as readline from "readline";
 
 import type {
   Adapter,
@@ -31,21 +37,36 @@ import { SCHEMA_VERSION } from "../types";
 import { expandHome, relativeToProject, tryTimestamp } from "../utils";
 import { warn } from "../logger";
 
+/** Non-turn bookkeeping line types that are expected and safe to skip silently. */
+const IGNORED_LINE_TYPES = new Set([
+  "queue-operation",
+  "attachment",
+  "file-history-snapshot",
+  "file-history-delta",
+  "ai-title",
+  "last-prompt",
+  "summary",
+]);
+
+interface ClaudeContentBlock {
+  type: string;
+  text?: string;
+  thinking?: string;
+  signature?: string;
+  name?: string;
+  input?: Record<string, unknown>;
+}
+
+interface ClaudeMessage {
+  role?: string;
+  content?: string | ClaudeContentBlock[];
+}
+
 interface ClaudeLine {
   type: string;
   uuid?: string;
   timestamp?: string;
-  // assistant content blocks
-  content?: Array<Record<string, unknown>> | string;
-  // thinking
-  thinking?: string;
-  signature?: string;
-  // tool_use
-  name?: string;
-  input?: Record<string, unknown>;
-  tool_use_id?: string;
-  // user messages
-  message?: string;
+  message?: ClaudeMessage;
   // session metadata
   sessionId?: string;
   cwd?: string;
@@ -162,7 +183,11 @@ export class ClaudeCodeAdapter implements Adapter {
       throw new Error(`Session file not found for session ID: ${sessionId}`);
     }
     const lines = await this.readJsonl(filePath);
-    const turns = this.parseLines(lines, projectPath || "");
+    // The dash-encoded directory name (e.g. "-Users-me-project") isn't a real
+    // filesystem path, so use the `cwd` recorded on the transcript lines
+    // themselves to resolve file_access paths relative to the actual project.
+    const cwd = lines.find((l) => l.cwd)?.cwd || "";
+    const turns = this.parseLines(lines, cwd);
 
     // Extract metadata from first line if available
     const firstLine = lines[0] || {};
@@ -183,12 +208,17 @@ export class ClaudeCodeAdapter implements Adapter {
   }
 
   private async readJsonl(filePath: string): Promise<ClaudeLine[]> {
+    // Deliberately split on the literal "\n" byte rather than using Node's
+    // readline module: readline also treats U+2028 LINE SEPARATOR and
+    // U+2029 PARAGRAPH SEPARATOR as line breaks. Real assistant/user text
+    // can legitimately contain those characters — they need no escaping
+    // inside a JSON string — but readline would shred a single line's
+    // string value into several bogus fragments at every occurrence, each
+    // failing to parse on its own.
+    const raw = fs.readFileSync(filePath, "utf-8");
     const lines: ClaudeLine[] = [];
-    const stream = fs.createReadStream(filePath, "utf-8");
-    const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
-
-    for await (const raw of rl) {
-      const trimmed = raw.trim();
+    for (const physicalLine of raw.split("\n")) {
+      const trimmed = physicalLine.trim();
       if (!trimmed) {
         continue;
       }
@@ -201,108 +231,81 @@ export class ClaudeCodeAdapter implements Adapter {
     return lines;
   }
 
-  private parseLines(lines: ClaudeLine[], projectPath: string): Turn[] {
+  private parseLines(lines: ClaudeLine[], cwd: string): Turn[] {
     const turns: Turn[] = [];
-    let pendingThinking: ThinkingBlock | null = null;
-    let pendingFileAccess: FileAccessEntry[] = [];
 
     for (const line of lines) {
-      switch (line.type) {
-        case "thinking": {
-          // Store thinking to attach to the next assistant turn
-          if (line.thinking && line.thinking.trim().length > 0) {
-            pendingThinking = { status: "present", text: line.thinking };
-          } else if (line.signature) {
-            // Known bug: thinking is empty but signature exists
-            pendingThinking = { status: "empty", text: null };
-          } else {
-            pendingThinking = { status: "empty", text: null };
-          }
-          break;
-        }
-
-        case "user": {
-          const content = this.extractText(line);
-          turns.push({
-            id: line.uuid || `turn-${turns.length + 1}`,
-            role: "user",
-            timestamp: tryTimestamp(line.timestamp) || new Date().toISOString(),
-            thinking: { status: "not_supported", text: null },
-            content,
-            file_access: [],
-          });
-          break;
-        }
-
-        case "assistant": {
-          const content = this.extractText(line);
-          const thinking = pendingThinking || { status: "not_supported", text: null };
-          const fileAccess = [...pendingFileAccess];
-
-          // Also check for inline tool_use blocks in content array
-          if (Array.isArray(line.content)) {
-            for (const block of line.content) {
-              if (block.type === "tool_use") {
-                const fa = this.extractFileAccess(block as unknown as Record<string, unknown>, projectPath);
-                if (fa) {
-                  fileAccess.push(fa);
-                }
-              }
-            }
-          }
-
-          turns.push({
-            id: line.uuid || `turn-${turns.length + 1}`,
-            role: "assistant",
-            timestamp: tryTimestamp(line.timestamp) || new Date().toISOString(),
-            thinking,
-            content,
-            file_access: fileAccess,
-          });
-
-          pendingThinking = null;
-          pendingFileAccess = [];
-          break;
-        }
-
-        case "tool_use": {
-          const fa = this.extractFileAccess(line as unknown as Record<string, unknown>, projectPath);
-          if (fa) {
-            pendingFileAccess.push(fa);
-          }
-          break;
-        }
-
-        case "tool_result": {
-          // Tool results don't generate turns; file access was already
-          // captured from the tool_use entry.
-          break;
-        }
-
-        default: {
+      if (line.type !== "user" && line.type !== "assistant") {
+        if (!IGNORED_LINE_TYPES.has(line.type)) {
           warn(`Unknown line type in Claude Code session: ${line.type}`);
-          break;
+        }
+        continue;
+      }
+
+      const blocks = this.contentBlocks(line.message);
+      const content = this.extractText(blocks);
+      const thinking: ThinkingBlock =
+        line.type === "assistant" ? this.extractThinking(blocks) : { status: "not_supported", text: null };
+
+      const fileAccess: FileAccessEntry[] = [];
+      for (const block of blocks) {
+        if (block.type === "tool_use") {
+          const fa = this.extractFileAccess(block as unknown as Record<string, unknown>, cwd);
+          if (fa) {
+            fileAccess.push(fa);
+          }
         }
       }
+
+      turns.push({
+        id: line.uuid || `turn-${turns.length + 1}`,
+        role: line.type === "user" ? "user" : "assistant",
+        timestamp: tryTimestamp(line.timestamp) || new Date().toISOString(),
+        thinking,
+        content,
+        file_access: fileAccess,
+      });
     }
 
     return turns;
   }
 
-  private extractText(line: ClaudeLine): string {
-    if (typeof line.content === "string") {
-      return line.content;
+  /** Normalize `message.content` (string or block array) into a block array. */
+  private contentBlocks(message: ClaudeMessage | undefined): ClaudeContentBlock[] {
+    const content = message?.content;
+    if (typeof content === "string") {
+      return content.length > 0 ? [{ type: "text", text: content }] : [];
     }
-    if (Array.isArray(line.content)) {
-      return line.content
-        .filter((block) => block.type === "text" && typeof block.text === "string")
-        .map((block) => block.text as string)
-        .join("\n");
+    if (Array.isArray(content)) {
+      return content;
     }
-    if (typeof line.message === "string") {
-      return line.message;
+    return [];
+  }
+
+  private extractText(blocks: ClaudeContentBlock[]): string {
+    return blocks
+      .filter((block) => block.type === "text" && typeof block.text === "string")
+      .map((block) => block.text as string)
+      .join("\n");
+  }
+
+  private extractThinking(blocks: ClaudeContentBlock[]): ThinkingBlock {
+    const thinkingBlocks = blocks.filter((block) => block.type === "thinking");
+    if (thinkingBlocks.length > 0) {
+      const text = thinkingBlocks
+        .map((block) => block.thinking || "")
+        .filter((t) => t.trim().length > 0)
+        .join("\n\n");
+      if (text.length > 0) {
+        return { status: "present", text };
+      }
+      // Known bug: thinking block present but blank, even though a signature exists.
+      return { status: "empty", text: null };
     }
-    return "";
+    if (blocks.some((block) => block.type === "redacted_thinking")) {
+      return { status: "redacted", text: null };
+    }
+    return { status: "not_supported", text: null };
   }
 
   private extractFileAccess(entry: Record<string, unknown>, projectPath: string): FileAccessEntry | null {

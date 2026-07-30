@@ -114,6 +114,11 @@
           "default": "",
           "description": "Override the path to Cursor state.vscdb. Defaults to the workspace storage database."
         },
+        "convoThinkExport.copilotChatStoragePath": {
+          "type": "string",
+          "default": "",
+          "description": "Override the path to the VS Code User directory for Copilot Chat sessions. Defaults to the platform-specific VS Code User data dir (e.g. ~/Library/Application Support/Code/User on macOS)."
+        },
         "convoThinkExport.outputDirectory": {
           "type": "string",
           "default": "",
@@ -143,6 +148,7 @@
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^3.1.0",
     "@vscode/vsce": "^3.0.0",
     "esbuild": "^0.25.0",
     "eslint": "^9.0.0",
